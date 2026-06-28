@@ -25,52 +25,26 @@ jobs:
           distribution: temurin
           java-version: 17
 
-      - name: Capacitor projesini hazırla
+      - name: Projeyi hazırla
         run: |
           mkdir -p www
           cp index.html www/index.html
 
-          cat > package.json <<'EOF'
-          {
-            "name": "kelime-kartlari",
-            "version": "1.0.0",
-            "private": true,
-            "dependencies": {
-              "@capacitor/core": "latest",
-              "@capacitor/android": "latest"
-            },
-            "devDependencies": {
-              "@capacitor/cli": "latest"
-            }
-          }
-          EOF
+          printf '%s\n' \
+          '{' \
+          '  "name": "kelime-kartlari",' \
+          '  "version": "1.0.0",' \
+          '  "private": true,' \
+          '  "dependencies": {' \
+          '    "@capacitor/core": "6.1.2",' \
+          '    "@capacitor/android": "6.1.2"' \
+          '  },' \
+          '  "devDependencies": {' \
+          '    "@capacitor/cli": "6.1.2"' \
+          '  }' \
+          '}' > package.json
 
-          cat > capacitor.config.json <<'EOF'
-          {
-            "appId": "com.mete.kelimekartlari",
-            "appName": "Kelime Kartları",
-            "webDir": "www",
-            "bundledWebRuntime": false
-          }
-          EOF
-
-      - name: Bağımlılıkları kur
-        run: npm install
-
-      - name: Android projesi oluştur
-        run: npx cap add android
-
-      - name: Dosyaları Android'e kopyala
-        run: npx cap copy android
-
-      - name: APK oluştur
-        run: |
-          cd android
-          chmod +x ./gradlew
-          ./gradlew assembleDebug
-
-      - name: APK'yı yükle
-        uses: actions/upload-artifact@v4
-        with:
-          name: kelime-kartlari-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          printf '%s\n' \
+          '{' \
+          '  "appId": "com.mete.kelimekartlari",' \
+         
