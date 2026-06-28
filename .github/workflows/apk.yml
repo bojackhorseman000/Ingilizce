@@ -47,4 +47,27 @@ jobs:
           printf '%s\n' \
           '{' \
           '  "appId": "com.mete.kelimekartlari",' \
-         
+          '  "appName": "Kelime Kartlari",' \
+          '  "webDir": "www"' \
+          '}' > capacitor.config.json
+
+      - name: Paketleri kur
+        run: npm install
+
+      - name: Android projesi oluştur
+        run: npx cap add android
+
+      - name: Android dosyalarını kopyala
+        run: npx cap copy android
+
+      - name: APK oluştur
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: APK artifact yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: kelime-kartlari-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
