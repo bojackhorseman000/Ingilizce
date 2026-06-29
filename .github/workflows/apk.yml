@@ -60,6 +60,58 @@ jobs:
       - name: Android projesi oluştur
         run: npx cap add android
 
+      - name: Android yerel ses köprüsünü ekle
+        run: |
+          cat > android/app/src/main/java/com/mete/kelimekartlari/MainActivity.java <<'EOF'
+          package com.mete.kelimekartlari;
+
+          import android.os.Bundle;
+          import android.speech.tts.TextToSpeech;
+          import android.webkit.JavascriptInterface;
+          import com.getcapacitor.BridgeActivity;
+          import java.util.Locale;
+
+          public class MainActivity extends BridgeActivity {
+            private TextToSpeech tts;
+
+            @Override
+            protected void onCreate(Bundle savedInstanceState) {
+              super.onCreate(savedInstanceState);
+
+              tts = new TextToSpeech(this, status -> {
+                if (status == TextToSpeech.SUCCESS && tts != null) {
+                  tts.setLanguage(Locale.US);
+                  tts.setSpeechRate(0.88f);
+                  tts.setPitch(1.0f);
+                }
+              });
+
+              getBridge().getWebView().addJavascriptInterface(new AndroidTTSBridge(), "AndroidTTS");
+            }
+
+            public class AndroidTTSBridge {
+              @JavascriptInterface
+              public void speak(String text) {
+                runOnUiThread(() -> {
+                  if (tts != null && text != null && text.trim().length() > 0) {
+                    tts.stop();
+                    tts.speak(text.trim(), TextToSpeech.QUEUE_FLUSH, null, "word-tts");
+                  }
+                });
+              }
+            }
+
+            @Override
+            protected void onDestroy() {
+              if (tts != null) {
+                tts.stop();
+                tts.shutdown();
+              }
+              super.onDestroy();
+            }
+          }
+          EOF
+
       - name: Android dosyalarını kopyala
         run: npx cap copy android
 
