@@ -27,12 +27,14 @@ jobs:
 
       - name: Capacitor projesini hazırla
         run: |
+          test -f index.html
+          rm -rf www android package.json package-lock.json capacitor.config.json node_modules
           mkdir -p www
           cp index.html www/index.html
 
           cat > package.json <<'EOF'
           {
-            "name": "kelime-kartlari",
+            "name": "kelime-kartlari-final",
             "version": "1.0.0",
             "private": true,
             "dependencies": {
@@ -47,10 +49,13 @@ jobs:
 
           cat > capacitor.config.json <<'EOF'
           {
-            "appId": "com.mete.kelimekartlari",
+            "appId": "com.mete.kelimekartlarifinal",
             "appName": "Kelime Kartlari",
             "webDir": "www",
-            "bundledWebRuntime": false
+            "bundledWebRuntime": false,
+            "server": {
+              "androidScheme": "https"
+            }
           }
           EOF
 
@@ -62,15 +67,13 @@ jobs:
 
       - name: Native Android TTS köprüsü ekle
         run: |
-          cat > android/app/src/main/java/com/mete/kelimekartlari/MainActivity.java <<'EOF'
-          package com.mete.kelimekartlari;
+          cat > android/app/src/main/java/com/mete/kelimekartlarifinal/MainActivity.java <<'EOF'
+          package com.mete.kelimekartlarifinal;
 
           import android.os.Bundle;
           import android.speech.tts.TextToSpeech;
           import android.webkit.JavascriptInterface;
-
           import com.getcapacitor.BridgeActivity;
-
           import java.util.Locale;
 
           public class MainActivity extends BridgeActivity {
@@ -79,19 +82,18 @@ jobs:
               @Override
               public void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-
-                  tts = new TextToSpeech(this, status -> {
-                      if (status == TextToSpeech.SUCCESS && tts != null) {
-                          tts.setLanguage(Locale.US);
-                          tts.setSpeechRate(0.9f);
-                          tts.setPitch(1.0f);
-                      }
-                  });
-
                   try {
+                      tts = new TextToSpeech(this, status -> {
+                          try {
+                              if (status == TextToSpeech.SUCCESS && tts != null) {
+                                  tts.setLanguage(Locale.US);
+                                  tts.setSpeechRate(0.9f);
+                                  tts.setPitch(1.0f);
+                              }
+                          } catch (Exception ignored) {}
+                      });
                       getBridge().getWebView().addJavascriptInterface(new AndroidTTSBridge(), "AndroidTTS");
-                  } catch (Exception ignored) {
-                  }
+                  } catch (Exception ignored) {}
               }
 
               public class AndroidTTSBridge {
@@ -103,8 +105,7 @@ jobs:
                                   tts.stop();
                                   tts.speak(text.trim(), TextToSpeech.QUEUE_FLUSH, null, "tts_" + System.currentTimeMillis());
                               }
-                          } catch (Exception ignored) {
-                          }
+                          } catch (Exception ignored) {}
                       });
                   }
               }
@@ -116,8 +117,7 @@ jobs:
                           tts.stop();
                           tts.shutdown();
                       }
-                  } catch (Exception ignored) {
-                  }
+                  } catch (Exception ignored) {}
                   super.onDestroy();
               }
           }
@@ -135,5 +135,5 @@ jobs:
       - name: APK artifact yükle
         uses: actions/upload-artifact@v4
         with:
-          name: kelime-kartlari-apk
+          name: kelime-kartlari-apk-final-clean
           path: android/app/build/outputs/apk/debug/app-debug.apk
