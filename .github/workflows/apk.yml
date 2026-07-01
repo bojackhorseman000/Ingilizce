@@ -32,7 +32,7 @@ jobs:
           mkdir -p www
           cp index.html www/index.html
 
-          cat > package.json <<'EOF'
+          cat > package.json <<'EOF_PACKAGE'
           {
             "name": "kelime-kartlari-jsfix",
             "version": "1.0.0",
@@ -45,9 +45,9 @@ jobs:
               "@capacitor/cli": "6.1.2"
             }
           }
-          EOF
+          EOF_PACKAGE
 
-          cat > capacitor.config.json <<'EOF'
+          cat > capacitor.config.json <<'EOF_CONFIG'
           {
             "appId": "com.mete.kelimekartlarijsfix",
             "appName": "Kelime Kartlari Fix",
@@ -57,7 +57,7 @@ jobs:
               "androidScheme": "https"
             }
           }
-          EOF
+          EOF_CONFIG
 
       - name: Paketleri kur
         run: npm install
@@ -67,7 +67,10 @@ jobs:
 
       - name: Native Android TTS köprüsü ekle
         run: |
-          cat > android/app/src/main/java/com/mete/kelimekartlarifinal/MainActivity.java <<'EOF'
+          PKG_DIR="android/app/src/main/java/com/mete/kelimekartlarijsfix"
+          mkdir -p "$PKG_DIR"
+
+          cat > "$PKG_DIR/MainActivity.java" <<'EOF_JAVA'
           package com.mete.kelimekartlarijsfix;
 
           import android.os.Bundle;
@@ -121,7 +124,10 @@ jobs:
                   super.onDestroy();
               }
           }
-          EOF
+          EOF_JAVA
+
+          echo "MainActivity oluşturuldu:"
+          find android/app/src/main/java -name MainActivity.java -print
 
       - name: Android dosyalarını kopyala
         run: npx cap copy android
@@ -135,5 +141,5 @@ jobs:
       - name: APK artifact yükle
         uses: actions/upload-artifact@v4
         with:
-          name: kelime-kartlari-apk-jsfix
+          name: kelime-kartlari-apk-jsfix-v2
           path: android/app/build/outputs/apk/debug/app-debug.apk
