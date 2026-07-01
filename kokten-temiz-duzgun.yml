@@ -1,0 +1,60 @@
+name: Kokten Temiz APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Repoyu al
+        uses: actions/checkout@v4
+
+      - name: Node kur
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Java kur
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+
+      - name: Temiz Capacitor projesi hazirla
+        run: |
+          set -e
+          test -f index.html
+          rm -rf www android node_modules package.json package-lock.json capacitor.config.json
+          mkdir -p www
+          cp index.html www/index.html
+          cat > package.json <<'PKG'
+          {"name":"kelime-kartlari-kokten-temiz","version":"1.0.0","private":true,"dependencies":{"@capacitor/core":"6.1.2","@capacitor/android":"6.1.2"},"devDependencies":{"@capacitor/cli":"6.1.2"}}
+          PKG
+          cat > capacitor.config.json <<'CAP'
+          {"appId":"com.mete.kelimekartlarikoktentemiz","appName":"Kelime Kartları","webDir":"www","bundledWebRuntime":false,"server":{"androidScheme":"https"}}
+          CAP
+
+      - name: Paketleri kur
+        run: npm install
+
+      - name: Android projesi oluştur
+        run: npx cap add android
+
+      - name: Web dosyalarını Android'e kopyala
+        run: npx cap copy android
+
+      - name: APK oluştur
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug --no-daemon
+
+      - name: APK artifact yükle
+        uses: actions/upload-artifact@v4
+        with:
+          name: kelime-kartlari-kokten-temiz-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
