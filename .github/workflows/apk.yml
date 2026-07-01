@@ -68,7 +68,9 @@ jobs:
           import android.os.Bundle;
           import android.speech.tts.TextToSpeech;
           import android.webkit.JavascriptInterface;
+
           import com.getcapacitor.BridgeActivity;
+
           import java.util.Locale;
 
           public class MainActivity extends BridgeActivity {
@@ -81,22 +83,27 @@ jobs:
                   tts = new TextToSpeech(this, status -> {
                       if (status == TextToSpeech.SUCCESS && tts != null) {
                           tts.setLanguage(Locale.US);
-                          tts.setSpeechRate(0.92f);
+                          tts.setSpeechRate(0.9f);
+                          tts.setPitch(1.0f);
                       }
                   });
 
-                  if (this.bridge != null && this.bridge.getWebView() != null) {
-                      this.bridge.getWebView().addJavascriptInterface(new AndroidTTSBridge(), "AndroidTTS");
+                  try {
+                      getBridge().getWebView().addJavascriptInterface(new AndroidTTSBridge(), "AndroidTTS");
+                  } catch (Exception ignored) {
                   }
               }
 
               public class AndroidTTSBridge {
                   @JavascriptInterface
-                  public void speak(String text) {
-                      if (text == null) return;
+                  public void speak(final String text) {
                       runOnUiThread(() -> {
-                          if (tts != null) {
-                              tts.speak(text, TextToSpeech.QUEUE_FLUSH, null, "kelimeKartlariTTS");
+                          try {
+                              if (tts != null && text != null && text.trim().length() > 0) {
+                                  tts.stop();
+                                  tts.speak(text.trim(), TextToSpeech.QUEUE_FLUSH, null, "tts_" + System.currentTimeMillis());
+                              }
+                          } catch (Exception ignored) {
                           }
                       });
                   }
@@ -104,9 +111,12 @@ jobs:
 
               @Override
               public void onDestroy() {
-                  if (tts != null) {
-                      tts.stop();
-                      tts.shutdown();
+                  try {
+                      if (tts != null) {
+                          tts.stop();
+                          tts.shutdown();
+                      }
+                  } catch (Exception ignored) {
                   }
                   super.onDestroy();
               }
