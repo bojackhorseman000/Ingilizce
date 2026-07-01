@@ -34,7 +34,7 @@ jobs:
 
           cat > package.json <<'EOF'
           {
-            "name": "kelime-kartlari-final",
+            "name": "kelime-kartlari-jsfix",
             "version": "1.0.0",
             "private": true,
             "dependencies": {
@@ -49,8 +49,8 @@ jobs:
 
           cat > capacitor.config.json <<'EOF'
           {
-            "appId": "com.mete.kelimekartlarifinal",
-            "appName": "Kelime Kartlari",
+            "appId": "com.mete.kelimekartlarijsfix",
+            "appName": "Kelime Kartlari Fix",
             "webDir": "www",
             "bundledWebRuntime": false,
             "server": {
@@ -68,7 +68,7 @@ jobs:
       - name: Native Android TTS köprüsü ekle
         run: |
           cat > android/app/src/main/java/com/mete/kelimekartlarifinal/MainActivity.java <<'EOF'
-          package com.mete.kelimekartlarifinal;
+          package com.mete.kelimekartlarijsfix;
 
           import android.os.Bundle;
           import android.speech.tts.TextToSpeech;
@@ -135,5 +135,5 @@ jobs:
       - name: APK artifact yükle
         uses: actions/upload-artifact@v4
         with:
-          name: kelime-kartlari-apk-final-clean
+          name: kelime-kartlari-apk-jsfix
           path: android/app/build/outputs/apk/debug/app-debug.apk
