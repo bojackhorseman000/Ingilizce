@@ -103,6 +103,7 @@ jobs:
 
           import android.app.Activity;
           import android.os.Build;
+          import android.content.SharedPreferences;
           import android.os.Bundle;
           import android.speech.tts.TextToSpeech;
           import android.view.MotionEvent;
@@ -116,12 +117,14 @@ jobs:
           public class MainActivity extends Activity {
               private WebView webView;
               private TextToSpeech tts;
+              private SharedPreferences prefs;
               private boolean ttsReady = false;
               private String pendingSpeak = null;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
+                  prefs = getSharedPreferences("kelime_kartlari_hafiza", MODE_PRIVATE);
 
                   tts = new TextToSpeech(this, status -> {
                       if (status == TextToSpeech.SUCCESS) {
@@ -150,6 +153,7 @@ jobs:
                   settings.setMediaPlaybackRequiresUserGesture(false);
 
                   webView.addJavascriptInterface(new AndroidTTSBridge(), "AndroidTTS");
+                  webView.addJavascriptInterface(new AndroidStorageBridge(), "AndroidStorage");
                   webView.setWebViewClient(new WebViewClient());
                   webView.setOnTouchListener(new View.OnTouchListener() {
                       @Override
@@ -190,6 +194,32 @@ jobs:
                   @JavascriptInterface
                   public boolean isReady() {
                       return ttsReady;
+                  }
+              }
+
+              public class AndroidStorageBridge {
+                  @JavascriptInterface
+                  public String getItem(String key) {
+                      if (key == null || prefs == null) return null;
+                      return prefs.getString(key, null);
+                  }
+
+                  @JavascriptInterface
+                  public void setItem(String key, String value) {
+                      if (key == null || prefs == null) return;
+                      prefs.edit().putString(key, value == null ? "" : value).apply();
+                  }
+
+                  @JavascriptInterface
+                  public void removeItem(String key) {
+                      if (key == null || prefs == null) return;
+                      prefs.edit().remove(key).apply();
+                  }
+
+                  @JavascriptInterface
+                  public void clear() {
+                      if (prefs == null) return;
+                      prefs.edit().clear().apply();
                   }
               }
 
