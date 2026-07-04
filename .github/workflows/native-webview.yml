@@ -1,4 +1,4 @@
-name: Native WebView Clean Stable APK
+name: Native WebView Root Fixed APK
 
 on:
   workflow_dispatch:
@@ -22,41 +22,38 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build native WebView APK clean stable
+      - name: Build root fixed native WebView APK
         run: |
           set -eux
           test -f index.html
           rm -rf native-apk
-          mkdir -p native-apk/app/src/main/java/com/mete/kelimekartlari/cleanstable
+          mkdir -p native-apk/app/src/main/java/com/mete/kelimekartlari/rootfix
           mkdir -p native-apk/app/src/main/assets
           cp index.html native-apk/app/src/main/assets/index.html
 
           cat > native-apk/settings.gradle <<'EOF2'
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
-          rootProject.name = 'KelimeKartlariCleanStable'
+          rootProject.name = 'KelimeKartlariRootFix'
           include ':app'
           EOF2
 
           cat > native-apk/build.gradle <<'EOF2'
-          plugins {
-              id 'com.android.application' version '8.6.1' apply false
-          }
+          plugins { id 'com.android.application' version '8.6.1' apply false }
           EOF2
 
           cat > native-apk/app/build.gradle <<'EOF2'
           plugins { id 'com.android.application' }
 
           android {
-              namespace 'com.mete.kelimekartlari.cleanstable'
+              namespace 'com.mete.kelimekartlari.rootfix'
               compileSdk 35
-
               defaultConfig {
-                  applicationId 'com.mete.kelimekartlari.cleanstable'
+                  applicationId 'com.mete.kelimekartlari.rootfix'
                   minSdk 23
                   targetSdk 35
                   versionCode Integer.parseInt(System.getenv("GITHUB_RUN_NUMBER") ?: "1")
-                  versionName "clean-stable-${System.getenv('GITHUB_RUN_NUMBER') ?: '1'}"
+                  versionName "2.0-rootfix-${System.getenv('GITHUB_RUN_NUMBER') ?: '1'}"
               }
           }
           EOF2
@@ -64,16 +61,8 @@ jobs:
           cat > native-apk/app/src/main/AndroidManifest.xml <<'EOF2'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
-              <application
-                  android:theme="@style/AppTheme"
-                  android:label="Kelime Kartları"
-                  android:hardwareAccelerated="true"
-                  android:usesCleartextTraffic="true"
-                  android:resizeableActivity="true">
-                  <activity
-                      android:name=".MainActivity"
-                      android:screenOrientation="portrait"
-                      android:exported="true">
+              <application android:theme="@style/AppTheme" android:label="Kelime Kartları" android:hardwareAccelerated="true" android:usesCleartextTraffic="true" android:resizeableActivity="true">
+                  <activity android:name=".MainActivity" android:screenOrientation="portrait" android:exported="true">
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
@@ -98,8 +87,8 @@ jobs:
           </resources>
           EOF2
 
-          cat > native-apk/app/src/main/java/com/mete/kelimekartlari/cleanstable/MainActivity.java <<'EOF2'
-          package com.mete.kelimekartlari.cleanstable;
+          cat > native-apk/app/src/main/java/com/mete/kelimekartlari/rootfix/MainActivity.java <<'EOF2'
+          package com.mete.kelimekartlari.rootfix;
 
           import android.app.Activity;
           import android.os.Build;
@@ -119,28 +108,21 @@ jobs:
               private boolean ttsReady = false;
               private String pendingSpeak = null;
 
-              @Override
-              protected void onCreate(Bundle savedInstanceState) {
+              @Override protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-
                   tts = new TextToSpeech(this, status -> {
                       if (status == TextToSpeech.SUCCESS) {
                           int result = tts.setLanguage(Locale.US);
                           ttsReady = result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED;
                           tts.setSpeechRate(0.88f);
                           tts.setPitch(1.0f);
-                          if (ttsReady && pendingSpeak != null) {
-                              speakNative(pendingSpeak);
-                              pendingSpeak = null;
-                          }
+                          if (ttsReady && pendingSpeak != null) { speakNative(pendingSpeak); pendingSpeak = null; }
                       }
                   });
-
                   webView = new WebView(this);
                   webView.setFocusable(true);
                   webView.setFocusableInTouchMode(true);
                   webView.requestFocusFromTouch();
-
                   WebSettings settings = webView.getSettings();
                   settings.setJavaScriptEnabled(true);
                   settings.setDomStorageEnabled(true);
@@ -148,71 +130,29 @@ jobs:
                   settings.setAllowFileAccess(true);
                   settings.setAllowContentAccess(true);
                   settings.setMediaPlaybackRequiresUserGesture(false);
-
+                  settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
+                      settings.setAllowFileAccessFromFileURLs(true);
+                      settings.setAllowUniversalAccessFromFileURLs(true);
+                  }
+                  webView.clearCache(true);
                   webView.addJavascriptInterface(new AndroidTTSBridge(), "AndroidTTS");
                   webView.setWebViewClient(new WebViewClient());
-                  webView.setOnTouchListener(new View.OnTouchListener() {
-                      @Override
-                      public boolean onTouch(View v, MotionEvent event) {
-                          v.requestFocusFromTouch();
-                          return false;
-                      }
-                  });
-
+                  webView.setOnTouchListener(new View.OnTouchListener(){ @Override public boolean onTouch(View v, MotionEvent event){ v.requestFocusFromTouch(); return false; }});
                   setContentView(webView);
                   webView.loadUrl("file:///android_asset/index.html");
               }
-
               private void speakNative(String text) {
                   if (text == null) return;
                   String clean = text.trim();
                   if (clean.length() == 0 || tts == null) return;
-
-                  if (!ttsReady) {
-                      pendingSpeak = clean;
-                      return;
-                  }
-
+                  if (!ttsReady) { pendingSpeak = clean; return; }
                   tts.stop();
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                      tts.speak(clean, TextToSpeech.QUEUE_FLUSH, null, "kelime_" + System.currentTimeMillis());
-                  } else {
-                      tts.speak(clean, TextToSpeech.QUEUE_FLUSH, null);
-                  }
+                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) tts.speak(clean, TextToSpeech.QUEUE_FLUSH, null, "kelime_" + System.currentTimeMillis());
+                  else tts.speak(clean, TextToSpeech.QUEUE_FLUSH, null);
               }
-
-              public class AndroidTTSBridge {
-                  @JavascriptInterface
-                  public void speak(String text) {
-                      runOnUiThread(() -> speakNative(text));
-                  }
-
-                  @JavascriptInterface
-                  public boolean isReady() {
-                      return ttsReady;
-                  }
-              }
-
-              @Override
-              protected void onDestroy() {
-                  if (tts != null) {
-                      tts.stop();
-                      tts.shutdown();
-                  }
-                  if (webView != null) {
-                      webView.destroy();
-                  }
-                  super.onDestroy();
-              }
-
-              @Override
-              public void onBackPressed() {
-                  if (webView != null && webView.canGoBack()) {
-                      webView.goBack();
-                  } else {
-                      super.onBackPressed();
-                  }
-              }
+              public class AndroidTTSBridge { @JavascriptInterface public void speak(String text) { runOnUiThread(() -> speakNative(text)); } @JavascriptInterface public boolean isReady() { return ttsReady; } }
+              @Override protected void onDestroy() { if (tts != null) { tts.stop(); tts.shutdown(); } if (webView != null) webView.destroy(); super.onDestroy(); }
           }
           EOF2
 
@@ -222,5 +162,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: kelime-kartlari-clean-stable-apk
+          name: kelime-kartlari-root-fixed-apk
           path: native-apk/app/build/outputs/apk/debug/app-debug.apk
