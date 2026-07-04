@@ -1,4 +1,4 @@
-name: Native WebView TTS APK
+name: Native WebView Clean Stable APK
 
 on:
   workflow_dispatch:
@@ -22,19 +22,19 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build native WebView APK with TTS
+      - name: Build native WebView APK clean stable
         run: |
           set -eux
           test -f index.html
           rm -rf native-apk
-          mkdir -p native-apk/app/src/main/java/com/mete/kelimekartlari/nativewebtts
+          mkdir -p native-apk/app/src/main/java/com/mete/kelimekartlari/cleanstable
           mkdir -p native-apk/app/src/main/assets
           cp index.html native-apk/app/src/main/assets/index.html
 
           cat > native-apk/settings.gradle <<'EOF2'
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
-          rootProject.name = 'KelimeKartlariNativeTTS'
+          rootProject.name = 'KelimeKartlariCleanStable'
           include ':app'
           EOF2
 
@@ -48,15 +48,15 @@ jobs:
           plugins { id 'com.android.application' }
 
           android {
-              namespace 'com.mete.kelimekartlari.nativewebtts'
+              namespace 'com.mete.kelimekartlari.cleanstable'
               compileSdk 35
 
               defaultConfig {
-                  applicationId 'com.mete.kelimekartlari.nativewebtts'
+                  applicationId 'com.mete.kelimekartlari.cleanstable'
                   minSdk 23
                   targetSdk 35
-                  versionCode 1
-                  versionName '1.0-tts'
+                  versionCode Integer.parseInt(System.getenv("GITHUB_RUN_NUMBER") ?: "1")
+                  versionName "clean-stable-${System.getenv('GITHUB_RUN_NUMBER') ?: '1'}"
               }
           }
           EOF2
@@ -98,8 +98,8 @@ jobs:
           </resources>
           EOF2
 
-          cat > native-apk/app/src/main/java/com/mete/kelimekartlari/nativewebtts/MainActivity.java <<'EOF2'
-          package com.mete.kelimekartlari.nativewebtts;
+          cat > native-apk/app/src/main/java/com/mete/kelimekartlari/cleanstable/MainActivity.java <<'EOF2'
+          package com.mete.kelimekartlari.cleanstable;
 
           import android.app.Activity;
           import android.os.Build;
@@ -222,5 +222,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: kelime-kartlari-native-webview-tts-apk
+          name: kelime-kartlari-clean-stable-apk
           path: native-apk/app/build/outputs/apk/debug/app-debug.apk
