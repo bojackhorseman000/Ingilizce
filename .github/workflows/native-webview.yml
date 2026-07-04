@@ -1,4 +1,4 @@
-name: Native WebView TTS Memory APK
+name: Native WebView TTS APK
 
 on:
   workflow_dispatch:
@@ -30,11 +30,6 @@ jobs:
           mkdir -p native-apk/app/src/main/java/com/mete/kelimekartlari/nativewebtts
           mkdir -p native-apk/app/src/main/assets
           cp index.html native-apk/app/src/main/assets/index.html
-          cat > native-apk/app/kelime-debug.keystore.b64 <<'KEYSTORE'
-          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
-          KEYSTORE
-          base64 -d native-apk/app/kelime-debug.keystore.b64 > native-apk/app/kelime-debug.keystore
-          rm native-apk/app/kelime-debug.keystore.b64
 
           cat > native-apk/settings.gradle <<'EOF2'
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
@@ -60,23 +55,8 @@ jobs:
                   applicationId 'com.mete.kelimekartlari.nativewebtts'
                   minSdk 23
                   targetSdk 35
-                  versionCode Integer.parseInt(System.getenv("GITHUB_RUN_NUMBER") ?: "2")
-                  versionName "1.1-memory-${System.getenv('GITHUB_RUN_NUMBER') ?: '2'}"
-              }
-
-              signingConfigs {
-                  debug {
-                      storeFile file('kelime-debug.keystore')
-                      storePassword 'kelime123'
-                      keyAlias 'kelime'
-                      keyPassword 'kelime123'
-                  }
-              }
-
-              buildTypes {
-                  debug {
-                      signingConfig signingConfigs.debug
-                  }
+                  versionCode 1
+                  versionName '1.0-tts'
               }
           }
           EOF2
@@ -122,7 +102,6 @@ jobs:
           package com.mete.kelimekartlari.nativewebtts;
 
           import android.app.Activity;
-          import android.content.SharedPreferences;
           import android.os.Build;
           import android.os.Bundle;
           import android.speech.tts.TextToSpeech;
@@ -171,7 +150,6 @@ jobs:
                   settings.setMediaPlaybackRequiresUserGesture(false);
 
                   webView.addJavascriptInterface(new AndroidTTSBridge(), "AndroidTTS");
-                  webView.addJavascriptInterface(new AndroidStoreBridge(), "AndroidStore");
                   webView.setWebViewClient(new WebViewClient());
                   webView.setOnTouchListener(new View.OnTouchListener() {
                       @Override
@@ -215,29 +193,6 @@ jobs:
                   }
               }
 
-              public class AndroidStoreBridge {
-                  private final SharedPreferences prefs = getSharedPreferences("kelime_kartlari_progress", MODE_PRIVATE);
-
-                  @JavascriptInterface
-                  public String getItem(String key) {
-                      if (key == null) return "__KK_NULL__";
-                      String value = prefs.getString(key, null);
-                      return value == null ? "__KK_NULL__" : value;
-                  }
-
-                  @JavascriptInterface
-                  public void setItem(String key, String value) {
-                      if (key == null) return;
-                      prefs.edit().putString(key, value == null ? "" : value).commit();
-                  }
-
-                  @JavascriptInterface
-                  public void removeItem(String key) {
-                      if (key == null) return;
-                      prefs.edit().remove(key).commit();
-                  }
-              }
-
               @Override
               protected void onDestroy() {
                   if (tts != null) {
@@ -267,5 +222,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: kelime-kartlari-native-webview-tts-memory-apk
+          name: kelime-kartlari-native-webview-tts-apk
           path: native-apk/app/build/outputs/apk/debug/app-debug.apk
