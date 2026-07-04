@@ -1,4 +1,4 @@
-name: Native WebView Root Fixed APK
+name: Native WebView Old UI ES5 APK
 
 on:
   workflow_dispatch:
@@ -22,19 +22,19 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build root fixed native WebView APK
+      - name: Build native WebView APK
         run: |
           set -eux
           test -f index.html
           rm -rf native-apk
-          mkdir -p native-apk/app/src/main/java/com/mete/kelimekartlari/rootfix
+          mkdir -p native-apk/app/src/main/java/com/mete/kelimekartlari/olduies5
           mkdir -p native-apk/app/src/main/assets
           cp index.html native-apk/app/src/main/assets/index.html
 
           cat > native-apk/settings.gradle <<'EOF2'
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
-          rootProject.name = 'KelimeKartlariRootFix'
+          rootProject.name = 'KelimeKartlariOldUiEs5'
           include ':app'
           EOF2
 
@@ -44,16 +44,15 @@ jobs:
 
           cat > native-apk/app/build.gradle <<'EOF2'
           plugins { id 'com.android.application' }
-
           android {
-              namespace 'com.mete.kelimekartlari.rootfix'
+              namespace 'com.mete.kelimekartlari.olduies5'
               compileSdk 35
               defaultConfig {
-                  applicationId 'com.mete.kelimekartlari.rootfix'
+                  applicationId 'com.mete.kelimekartlari.olduies5'
                   minSdk 23
                   targetSdk 35
                   versionCode Integer.parseInt(System.getenv("GITHUB_RUN_NUMBER") ?: "1")
-                  versionName "2.0-rootfix-${System.getenv('GITHUB_RUN_NUMBER') ?: '1'}"
+                  versionName "3.0-old-ui-es5-${System.getenv('GITHUB_RUN_NUMBER') ?: '1'}"
               }
           }
           EOF2
@@ -87,9 +86,8 @@ jobs:
           </resources>
           EOF2
 
-          cat > native-apk/app/src/main/java/com/mete/kelimekartlari/rootfix/MainActivity.java <<'EOF2'
-          package com.mete.kelimekartlari.rootfix;
-
+          cat > native-apk/app/src/main/java/com/mete/kelimekartlari/olduies5/MainActivity.java <<'EOF2'
+          package com.mete.kelimekartlari.olduies5;
           import android.app.Activity;
           import android.os.Build;
           import android.os.Bundle;
@@ -101,66 +99,27 @@ jobs:
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
           import java.util.Locale;
-
           public class MainActivity extends Activity {
-              private WebView webView;
-              private TextToSpeech tts;
-              private boolean ttsReady = false;
-              private String pendingSpeak = null;
-
-              @Override protected void onCreate(Bundle savedInstanceState) {
+              private WebView webView; private TextToSpeech tts; private boolean ttsReady=false; private String pendingSpeak=null;
+              @Override protected void onCreate(Bundle savedInstanceState){
                   super.onCreate(savedInstanceState);
-                  tts = new TextToSpeech(this, status -> {
-                      if (status == TextToSpeech.SUCCESS) {
-                          int result = tts.setLanguage(Locale.US);
-                          ttsReady = result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED;
-                          tts.setSpeechRate(0.88f);
-                          tts.setPitch(1.0f);
-                          if (ttsReady && pendingSpeak != null) { speakNative(pendingSpeak); pendingSpeak = null; }
-                      }
-                  });
-                  webView = new WebView(this);
-                  webView.setFocusable(true);
-                  webView.setFocusableInTouchMode(true);
-                  webView.requestFocusFromTouch();
-                  WebSettings settings = webView.getSettings();
-                  settings.setJavaScriptEnabled(true);
-                  settings.setDomStorageEnabled(true);
-                  settings.setDatabaseEnabled(true);
-                  settings.setAllowFileAccess(true);
-                  settings.setAllowContentAccess(true);
-                  settings.setMediaPlaybackRequiresUserGesture(false);
-                  settings.setCacheMode(WebSettings.LOAD_NO_CACHE);
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN) {
-                      settings.setAllowFileAccessFromFileURLs(true);
-                      settings.setAllowUniversalAccessFromFileURLs(true);
-                  }
-                  webView.clearCache(true);
-                  webView.addJavascriptInterface(new AndroidTTSBridge(), "AndroidTTS");
-                  webView.setWebViewClient(new WebViewClient());
-                  webView.setOnTouchListener(new View.OnTouchListener(){ @Override public boolean onTouch(View v, MotionEvent event){ v.requestFocusFromTouch(); return false; }});
-                  setContentView(webView);
-                  webView.loadUrl("file:///android_asset/index.html");
+                  tts=new TextToSpeech(this, status->{ if(status==TextToSpeech.SUCCESS){ int result=tts.setLanguage(Locale.US); ttsReady=result!=TextToSpeech.LANG_MISSING_DATA && result!=TextToSpeech.LANG_NOT_SUPPORTED; tts.setSpeechRate(0.88f); tts.setPitch(1.0f); if(ttsReady && pendingSpeak!=null){ speakNative(pendingSpeak); pendingSpeak=null; } } });
+                  webView=new WebView(this); webView.setFocusable(true); webView.setFocusableInTouchMode(true); webView.requestFocusFromTouch();
+                  WebSettings s=webView.getSettings(); s.setJavaScriptEnabled(true); s.setDomStorageEnabled(true); s.setDatabaseEnabled(true); s.setAllowFileAccess(true); s.setAllowContentAccess(true); s.setMediaPlaybackRequiresUserGesture(false); s.setCacheMode(WebSettings.LOAD_NO_CACHE);
+                  if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.JELLY_BEAN){ s.setAllowFileAccessFromFileURLs(true); s.setAllowUniversalAccessFromFileURLs(true); }
+                  webView.clearCache(true); webView.addJavascriptInterface(new AndroidTTSBridge(), "AndroidTTS"); webView.setWebViewClient(new WebViewClient()); webView.setOnTouchListener(new View.OnTouchListener(){ @Override public boolean onTouch(View v, MotionEvent e){ v.requestFocusFromTouch(); return false; }});
+                  setContentView(webView); webView.loadUrl("file:///android_asset/index.html");
               }
-              private void speakNative(String text) {
-                  if (text == null) return;
-                  String clean = text.trim();
-                  if (clean.length() == 0 || tts == null) return;
-                  if (!ttsReady) { pendingSpeak = clean; return; }
-                  tts.stop();
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) tts.speak(clean, TextToSpeech.QUEUE_FLUSH, null, "kelime_" + System.currentTimeMillis());
-                  else tts.speak(clean, TextToSpeech.QUEUE_FLUSH, null);
-              }
-              public class AndroidTTSBridge { @JavascriptInterface public void speak(String text) { runOnUiThread(() -> speakNative(text)); } @JavascriptInterface public boolean isReady() { return ttsReady; } }
-              @Override protected void onDestroy() { if (tts != null) { tts.stop(); tts.shutdown(); } if (webView != null) webView.destroy(); super.onDestroy(); }
+              private void speakNative(String text){ if(text==null)return; String clean=text.trim(); if(clean.length()==0||tts==null)return; if(!ttsReady){ pendingSpeak=clean; return; } tts.stop(); if(Build.VERSION.SDK_INT>=Build.VERSION_CODES.LOLLIPOP) tts.speak(clean,TextToSpeech.QUEUE_FLUSH,null,"kelime_"+System.currentTimeMillis()); else tts.speak(clean,TextToSpeech.QUEUE_FLUSH,null); }
+              public class AndroidTTSBridge { @JavascriptInterface public void speak(String text){ runOnUiThread(()->speakNative(text)); } @JavascriptInterface public boolean isReady(){ return ttsReady; } }
+              @Override protected void onDestroy(){ if(tts!=null){tts.stop();tts.shutdown();} if(webView!=null)webView.destroy(); super.onDestroy(); }
           }
           EOF2
-
           cd native-apk
           gradle assembleDebug --no-daemon
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: kelime-kartlari-root-fixed-apk
+          name: kelime-kartlari-old-ui-es5-apk
           path: native-apk/app/build/outputs/apk/debug/app-debug.apk
