@@ -1,0 +1,437 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Kelime Kartları</title>
+<style>
+:root {
+  --bg:#111724; --bg2:#1b2434; --card:#263145; --card2:#202a3b;
+  --text:#f5efe7; --muted:#b3adba; --line:rgba(255,255,255,.12);
+  --good:#aee6ca; --bad:#efa9a3; --accent:#f0d99c; --panel:rgba(255,255,255,.07);
+}
+* { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html,body {
+  margin:0; height:100%; overflow:hidden; color:var(--text);
+  background:linear-gradient(160deg,var(--bg2),var(--bg));
+  font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+  user-select:none;
+}
+button,select,input,textarea { font:inherit; color:inherit; }
+button { border:0; cursor:pointer; }
+.app {
+  height:100vh; height:100dvh; max-width:560px; margin:0 auto;
+  padding:calc(env(safe-area-inset-top) + 14px) 16px calc(env(safe-area-inset-bottom) + 12px);
+  display:flex; flex-direction:column; gap:12px;
+}
+.top { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+h1 { margin:0; font-size:clamp(28px,8vw,42px); letter-spacing:-.06em; line-height:.9; }
+.sub { margin:7px 0 0; color:var(--muted); font-size:13px; font-weight:800; }
+.iconBtn {
+  width:48px; height:48px; border-radius:18px; background:var(--panel);
+  border:1px solid var(--line); font-size:24px; font-weight:1000;
+}
+.panel {
+  background:var(--panel); border:1px solid var(--line); border-radius:24px; padding:11px;
+}
+.row { display:grid; grid-template-columns:1fr auto; gap:8px; align-items:center; }
+select,input,textarea {
+  width:100%; min-width:0; outline:0; border:1px solid var(--line);
+  background:rgba(0,0,0,.18); border-radius:17px; padding:12px 14px;
+  font-weight:850;
+}
+.badge {
+  height:44px; border-radius:17px; padding:0 13px; display:flex; align-items:center;
+  background:rgba(240,217,156,.13); color:var(--accent);
+  border:1px solid rgba(240,217,156,.20); font-weight:1000; white-space:nowrap;
+}
+.stats { display:flex; justify-content:space-between; gap:10px; margin-top:9px; color:var(--muted); font-size:12px; font-weight:900; }
+.stats b { color:var(--text); }
+.bar { height:7px; border-radius:99px; background:rgba(255,255,255,.08); overflow:hidden; margin-top:9px; }
+.bar i { display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--good),var(--accent)); transition:width .2s ease; }
+.quick { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:9px; }
+.btn {
+  border-radius:17px; min-height:44px; padding:11px 12px; background:rgba(255,255,255,.075);
+  border:1px solid var(--line); font-weight:1000;
+}
+.btn.primary { background:linear-gradient(135deg,rgba(174,230,202,.20),rgba(240,217,156,.16)); }
+.btn.bad { background:rgba(239,169,163,.14); }
+.btn.good { background:rgba(174,230,202,.15); }
+.stage { flex:1; min-height:0; display:flex; align-items:center; justify-content:center; padding:4px 0 8px; }
+.card {
+  width:min(100%,440px); height:min(58vh,500px); min-height:320px;
+  border-radius:34px; background:linear-gradient(150deg,var(--card),var(--card2));
+  border:1px solid rgba(255,255,255,.10); box-shadow:0 26px 70px rgba(0,0,0,.34);
+  display:flex; flex-direction:column; padding:24px; text-align:center; position:relative;
+}
+.meta { display:flex; justify-content:space-between; gap:12px; color:var(--muted); font-size:12px; font-weight:900; }
+.center { margin:auto 0; }
+.word { font-size:clamp(43px,12vw,76px); line-height:.92; font-weight:1000; letter-spacing:-.07em; overflow-wrap:anywhere; }
+.ipa { margin-top:14px; font-size:clamp(17px,4.5vw,25px); font-weight:850; color:rgba(245,239,231,.72); font-family:Georgia,serif; }
+.meaning { font-size:clamp(25px,7vw,40px); line-height:1.13; font-weight:950; letter-spacing:-.04em; color:#fff3e4; overflow-wrap:anywhere; }
+.hint { color:rgba(245,239,231,.55); font-size:12px; font-weight:850; }
+.actions { display:grid; grid-template-columns:1fr 1fr 1fr; gap:8px; margin-top:10px; width:min(100%,440px); }
+.overlay { position:fixed; inset:0; z-index:20; background:rgba(6,9,14,.72); backdrop-filter:blur(8px); display:none; padding:calc(env(safe-area-inset-top) + 14px) 14px calc(env(safe-area-inset-bottom) + 14px); }
+.overlay.show { display:flex; }
+.box { width:min(100%,560px); max-height:100%; margin:auto; background:#1c2432; border:1px solid var(--line); border-radius:28px; padding:14px; display:flex; flex-direction:column; gap:10px; box-shadow:0 30px 90px rgba(0,0,0,.45); }
+.boxTop { display:flex; align-items:center; justify-content:space-between; gap:10px; }
+.results { overflow:auto; display:flex; flex-direction:column; gap:8px; }
+.res { border:1px solid var(--line); background:rgba(255,255,255,.055); border-radius:18px; padding:12px; }
+.res b { font-size:20px; }
+.res small { color:var(--muted); font-weight:800; }
+.toast { position:fixed; left:50%; bottom:calc(env(safe-area-inset-bottom) + 18px); transform:translateX(-50%) translateY(16px); opacity:0; z-index:50; background:rgba(0,0,0,.75); border:1px solid var(--line); border-radius:999px; padding:12px 16px; font-weight:900; transition:.18s; }
+.toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+@media(max-height:690px) {
+  .app { gap:8px; padding-top:10px; }
+  .card { min-height:260px; height:49vh; padding:19px; border-radius:28px; }
+  h1 { font-size:28px; }
+  .btn { min-height:40px; padding:9px; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="top">
+    <div>
+      <h1>Kelime</h1>
+      <p class="sub">dokun: anlam · sağ: bildim · sol: sepet</p>
+    </div>
+    <button class="iconBtn" id="menuBtn" aria-label="Menü">☰</button>
+  </div>
+
+  <section class="panel">
+    <div class="row">
+      <select id="source"></select>
+      <div class="badge" id="level">Ana liste</div>
+    </div>
+    <div class="stats"><span>İlerleme: <b id="progressTxt">0/0</b></span><span>Sepet: <b id="basketTxt">0</b></span></div>
+    <div class="bar"><i id="bar"></i></div>
+    <div class="quick">
+      <button class="btn" id="shuffleBtn">Karıştır</button>
+      <button class="btn primary" id="basketBtn">Sepeti çöz</button>
+      <button class="btn" id="testBtn">Yazma testi</button>
+      <button class="btn" id="searchBtn">Ara</button>
+    </div>
+  </section>
+
+  <main class="stage">
+    <div>
+      <section class="card" id="card">
+        <div class="meta"><span id="srcTxt">Kaynak</span><span id="noTxt">0/0</span></div>
+        <div class="center" id="front">
+          <div class="word" id="word">WORD</div>
+          <div class="ipa" id="ipa">/IPA/</div>
+          <button class="btn" id="speakBtn" style="margin-top:18px">🔊 Ses</button>
+        </div>
+        <div class="center" id="back" style="display:none">
+          <div class="meaning" id="meaning">anlam</div>
+        </div>
+        <div class="hint" id="hint">dokununca anlam görünür</div>
+      </section>
+      <div class="actions">
+        <button class="btn bad" id="badBtn">Sepete</button>
+        <button class="btn primary" id="flipBtn">Anlam</button>
+        <button class="btn good" id="goodBtn">Bildim</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="overlay" id="menuBox">
+  <div class="box">
+    <div class="boxTop"><b>Menü</b><button class="iconBtn" id="closeMenu">×</button></div>
+    <button class="btn" id="restartBtn">Bu listeyi başa al</button>
+    <button class="btn" id="exportBtn">Sepeti JSON indir</button>
+    <button class="btn bad" id="clearBtn">Sepeti temizle</button>
+    <button class="btn bad" id="resetBtn">Tüm ilerlemeyi sıfırla</button>
+    <p class="hint">Bu dosya APK için bağımsız kurtarma sürümüdür. Dış dosya, CDN veya capacitor.js kullanmaz.</p>
+  </div>
+</div>
+
+<div class="overlay" id="searchBox">
+  <div class="box">
+    <div class="boxTop"><b>Kelime ara</b><button class="iconBtn" id="closeSearch">×</button></div>
+    <input id="q" placeholder="Kelime, IPA veya anlam yaz...">
+    <div class="results" id="results"></div>
+  </div>
+</div>
+
+<div class="overlay" id="testBox">
+  <div class="box">
+    <div class="boxTop"><b>Yazma testi</b><button class="iconBtn" id="closeTest">×</button></div>
+    <div class="meaning" id="testMeaning" style="text-align:center;margin:28px 0">anlam</div>
+    <input id="testInput" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="İngilizcesini yaz">
+    <div id="testAnswer" class="hint" style="min-height:42px;text-align:center"></div>
+    <div class="quick"><button class="btn bad" id="testSkip">Bilmiyorum</button><button class="btn good" id="testCheck">Kontrol</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function(){
+'use strict';
+
+var DEFAULT_WORDS = [{"word":"ALONG","meaning":"boyunca; yanında; ileri doğru","ipa":"/əˈlɔːŋ/","source":"Kurtarma Listesi"},{"word":"ALTHOUGH","meaning":"olmasına rağmen; gerçi","ipa":"/ɔːlˈðoʊ/","source":"Kurtarma Listesi"},{"word":"AMONG","meaning":"arasında; içinde","ipa":"/əˈmʌŋ/","source":"Kurtarma Listesi"},{"word":"ASHAMED","meaning":"utanmış; mahcup","ipa":"/əˈʃeɪmd/","source":"Kurtarma Listesi"},{"word":"BENEATH","meaning":"altında; aşağısında","ipa":"/bɪˈniːθ/","source":"Kurtarma Listesi"},{"word":"BESIDE","meaning":"yanında; yanı sıra","ipa":"/bɪˈsaɪd/","source":"Kurtarma Listesi"},{"word":"BOTTOM","meaning":"dip; alt kısım","ipa":"/ˈbɑːtəm/","source":"Kurtarma Listesi"},{"word":"BREAK","meaning":"kırmak; mola; bozmak","ipa":"/breɪk/","source":"Kurtarma Listesi"},{"word":"COAT","meaning":"palto; kaplamak; katman","ipa":"/koʊt/","source":"Kurtarma Listesi"},{"word":"COURSE","meaning":"kurs; rota; süreç","ipa":"/kɔːrs/","source":"Kurtarma Listesi"},{"word":"CROSS","meaning":"karşıya geçmek; çarpı; kızgın","ipa":"/krɔːs/","source":"Kurtarma Listesi"},{"word":"FELLOW","meaning":"adam; arkadaş; üye","ipa":"/ˈfeloʊ/","source":"Kurtarma Listesi"},{"word":"FORWARD","meaning":"ileri; göndermek; öne çıkarmak","ipa":"/ˈfɔːrwərd/","source":"Kurtarma Listesi"},{"word":"FURTHER","meaning":"daha ileri; ayrıca; ilerletmek","ipa":"/ˈfɜːrðər/","source":"Kurtarma Listesi"},{"word":"HALL","meaning":"salon; koridor","ipa":"/hɔːl/","source":"Kurtarma Listesi"},{"word":"HANDLE","meaning":"tutmak; idare etmek; kulp","ipa":"/ˈhændəl/","source":"Kurtarma Listesi"},{"word":"HONOUR","meaning":"onur; şeref; saygı göstermek","ipa":"/ˈɑːnər/","source":"Kurtarma Listesi"},{"word":"INDEED","meaning":"gerçekten; nitekim","ipa":"/ɪnˈdiːd/","source":"Kurtarma Listesi"},{"word":"ISSUE","meaning":"konu; mesele; yayınlamak","ipa":"/ˈɪʃuː/","source":"Kurtarma Listesi"},{"word":"LEAST","meaning":"en az; en küçük","ipa":"/liːst/","source":"Kurtarma Listesi"},{"word":"LOT","meaning":"çok; yığın; pay","ipa":"/lɑːt/","source":"Kurtarma Listesi"},{"word":"MIGHT","meaning":"-mış olabilir; güç","ipa":"/maɪt/","source":"Kurtarma Listesi"},{"word":"MILE","meaning":"mil; uzun mesafe","ipa":"/maɪl/","source":"Kurtarma Listesi"},{"word":"NEAT","meaning":"düzenli; temiz; sade","ipa":"/niːt/","source":"Kurtarma Listesi"},{"word":"ONCE","meaning":"bir kez; eskiden","ipa":"/wʌns/","source":"Kurtarma Listesi"},{"word":"OUGHT","meaning":"-meli/-malı; gerekir","ipa":"/ɔːt/","source":"Kurtarma Listesi"},{"word":"PACK","meaning":"paket; çanta; paketlemek","ipa":"/pæk/","source":"Kurtarma Listesi"},{"word":"PARK","meaning":"park; park etmek","ipa":"/pɑːrk/","source":"Kurtarma Listesi"},{"word":"PENNY","meaning":"peni; bozuk para","ipa":"/ˈpeni/","source":"Kurtarma Listesi"},{"word":"POP","meaning":"patlamak; aniden çıkmak","ipa":"/pɑːp/","source":"Kurtarma Listesi"},{"word":"POST","meaning":"posta; görev; göndermek","ipa":"/poʊst/","source":"Kurtarma Listesi"},{"word":"QUITE","meaning":"oldukça; tamamen","ipa":"/kwaɪt/","source":"Kurtarma Listesi"},{"word":"RELATE","meaning":"ilişkilendirmek; anlatmak","ipa":"/rɪˈleɪt/","source":"Kurtarma Listesi"},{"word":"RID","meaning":"kurtulmak; arındırmak","ipa":"/rɪd/","source":"Kurtarma Listesi"},{"word":"ROUND","meaning":"yuvarlak; tur; yaklaşık","ipa":"/raʊnd/","source":"Kurtarma Listesi"},{"word":"SETTLE","meaning":"yerleşmek; çözmek; yatışmak","ipa":"/ˈsetəl/","source":"Kurtarma Listesi"},{"word":"SHALL","meaning":"-acak/-ecek; yapayım mı?","ipa":"/ʃæl/","source":"Kurtarma Listesi"},{"word":"SHOUT","meaning":"bağırmak; haykırmak","ipa":"/ʃaʊt/","source":"Kurtarma Listesi"},{"word":"SHUT","meaning":"kapatmak; kapalı","ipa":"/ʃʌt/","source":"Kurtarma Listesi"},{"word":"SIGHT","meaning":"görüş; manzara; görme","ipa":"/saɪt/","source":"Kurtarma Listesi"},{"word":"SIGN","meaning":"işaret; tabela; imzalamak","ipa":"/saɪn/","source":"Kurtarma Listesi"},{"word":"SLIGHT","meaning":"hafif; küçük; önemsiz","ipa":"/slaɪt/","source":"Kurtarma Listesi"},{"word":"SPOT","meaning":"nokta; leke; fark etmek","ipa":"/spɑːt/","source":"Kurtarma Listesi"},{"word":"STATE","meaning":"durum; devlet; belirtmek","ipa":"/steɪt/","source":"Kurtarma Listesi"},{"word":"STRIKE","meaning":"vurmak; grev; etkilemek","ipa":"/straɪk/","source":"Kurtarma Listesi"},{"word":"SUCH","meaning":"böyle; bu tür","ipa":"/sʌtʃ/","source":"Kurtarma Listesi"},{"word":"SUIT","meaning":"takım elbise; uymak; yakışmak","ipa":"/suːt/","source":"Kurtarma Listesi"},{"word":"TAIL","meaning":"kuyruk; arka kısım","ipa":"/teɪl/","source":"Kurtarma Listesi"},{"word":"THOUGH","meaning":"gerçi; buna rağmen","ipa":"/ðoʊ/","source":"Kurtarma Listesi"},{"word":"THUS","meaning":"böylece; bu nedenle","ipa":"/ðʌs/","source":"Kurtarma Listesi"},{"word":"TOWARD","meaning":"-e doğru; yönünde","ipa":"/təˈwɔːrd/","source":"Kurtarma Listesi"},{"word":"TRUST","meaning":"güven; güvenmek","ipa":"/trʌst/","source":"Kurtarma Listesi"},{"word":"UNLESS","meaning":"-medikçe; olmadıkça","ipa":"/ənˈles/","source":"Kurtarma Listesi"},{"word":"UPON","meaning":"üzerine; üstünde","ipa":"/əˈpɑːn/","source":"Kurtarma Listesi"},{"word":"WASTE","meaning":"israf; boşa harcamak","ipa":"/weɪst/","source":"Kurtarma Listesi"},{"word":"WEALTH","meaning":"zenginlik; servet","ipa":"/welθ/","source":"Kurtarma Listesi"},{"word":"WHETHER","meaning":"olup olmadığı; ister ... ister","ipa":"/ˈweðər/","source":"Kurtarma Listesi"},{"word":"WORTH","meaning":"değer; değerinde","ipa":"/wɜːrθ/","source":"Kurtarma Listesi"},{"word":"YET","meaning":"henüz; yine de","ipa":"/jet/","source":"Kurtarma Listesi"},{"word":"ABILITY","meaning":"yetenek; beceri","ipa":"/əˈbɪləti/","source":"Ek Liste"},{"word":"ABSENCE","meaning":"yokluk; devamsızlık","ipa":"/ˈæbsəns/","source":"Ek Liste"},{"word":"ACHIEVE","meaning":"başarmak; elde etmek","ipa":"/əˈtʃiːv/","source":"Ek Liste"},{"word":"ADAPT","meaning":"uyum sağlamak; uyarlamak","ipa":"/əˈdæpt/","source":"Ek Liste"},{"word":"ADMIT","meaning":"kabul etmek; itiraf etmek","ipa":"/ədˈmɪt/","source":"Ek Liste"},{"word":"AFFECT","meaning":"etkilemek","ipa":"/əˈfekt/","source":"Ek Liste"},{"word":"ALLOW","meaning":"izin vermek; olanak tanımak","ipa":"/əˈlaʊ/","source":"Ek Liste"},{"word":"APPROACH","meaning":"yaklaşmak; yaklaşım","ipa":"/əˈproʊtʃ/","source":"Ek Liste"},{"word":"ARGUE","meaning":"tartışmak; savunmak","ipa":"/ˈɑːrɡjuː/","source":"Ek Liste"},{"word":"ARRANGE","meaning":"düzenlemek; ayarlamak","ipa":"/əˈreɪndʒ/","source":"Ek Liste"},{"word":"ATTEMPT","meaning":"girişim; denemek","ipa":"/əˈtempt/","source":"Ek Liste"},{"word":"AVOID","meaning":"kaçınmak; önlemek","ipa":"/əˈvɔɪd/","source":"Ek Liste"},{"word":"BENEFIT","meaning":"fayda; yararlanmak","ipa":"/ˈbenəfɪt/","source":"Ek Liste"},{"word":"CAUSE","meaning":"neden; sebep olmak","ipa":"/kɔːz/","source":"Ek Liste"},{"word":"CONSIDER","meaning":"düşünmek; dikkate almak","ipa":"/kənˈsɪdər/","source":"Ek Liste"},{"word":"CREATE","meaning":"oluşturmak; yaratmak","ipa":"/kriˈeɪt/","source":"Ek Liste"},{"word":"DEMAND","meaning":"talep; talep etmek","ipa":"/dɪˈmænd/","source":"Ek Liste"},{"word":"DEPEND","meaning":"bağlı olmak; güvenmek","ipa":"/dɪˈpend/","source":"Ek Liste"},{"word":"DESCRIBE","meaning":"tanımlamak; betimlemek","ipa":"/dɪˈskraɪb/","source":"Ek Liste"},{"word":"DEVELOP","meaning":"geliştirmek; gelişmek","ipa":"/dɪˈveləp/","source":"Ek Liste"},{"word":"EFFECT","meaning":"etki; sonuç","ipa":"/ɪˈfekt/","source":"Ek Liste"},{"word":"EFFORT","meaning":"çaba; emek","ipa":"/ˈefərt/","source":"Ek Liste"},{"word":"ENABLE","meaning":"olanak sağlamak; mümkün kılmak","ipa":"/ɪˈneɪbəl/","source":"Ek Liste"},{"word":"ENCOURAGE","meaning":"cesaretlendirmek; teşvik etmek","ipa":"/ɪnˈkɜːrɪdʒ/","source":"Ek Liste"},{"word":"ESTABLISH","meaning":"kurmak; yerleştirmek","ipa":"/ɪˈstæblɪʃ/","source":"Ek Liste"},{"word":"EVIDENCE","meaning":"kanıt; delil","ipa":"/ˈevɪdəns/","source":"Ek Liste"},{"word":"EXPERIENCE","meaning":"deneyim; yaşamak","ipa":"/ɪkˈspɪriəns/","source":"Ek Liste"},{"word":"FOCUS","meaning":"odak; odaklanmak","ipa":"/ˈfoʊkəs/","source":"Ek Liste"},{"word":"IMPROVE","meaning":"geliştirmek; iyileşmek","ipa":"/ɪmˈpruːv/","source":"Ek Liste"},{"word":"INCREASE","meaning":"artmak; artırmak","ipa":"/ɪnˈkriːs/","source":"Ek Liste"},{"word":"INVOLVE","meaning":"içermek; dahil etmek","ipa":"/ɪnˈvɑːlv/","source":"Ek Liste"},{"word":"NOTICE","meaning":"fark etmek; bildirim","ipa":"/ˈnoʊtɪs/","source":"Ek Liste"},{"word":"PREVENT","meaning":"önlemek; engellemek","ipa":"/prɪˈvent/","source":"Ek Liste"},{"word":"PROVIDE","meaning":"sağlamak; temin etmek","ipa":"/prəˈvaɪd/","source":"Ek Liste"},{"word":"REQUIRE","meaning":"gerektirmek; ihtiyaç duymak","ipa":"/rɪˈkwaɪər/","source":"Ek Liste"},{"word":"RESPOND","meaning":"yanıt vermek; tepki vermek","ipa":"/rɪˈspɑːnd/","source":"Ek Liste"},{"word":"RESULT","meaning":"sonuç; sonuçlanmak","ipa":"/rɪˈzʌlt/","source":"Ek Liste"},{"word":"SEEK","meaning":"aramak; peşinde olmak","ipa":"/siːk/","source":"Ek Liste"},{"word":"SUPPORT","meaning":"destek; desteklemek","ipa":"/səˈpɔːrt/","source":"Ek Liste"},{"word":"TREAT","meaning":"davranmak; tedavi etmek","ipa":"/triːt/","source":"Ek Liste"}];
+var LS_KEY = 'kelime_kartlari_recovery_v1';
+
+var state = loadState();
+var words = DEFAULT_WORDS.map(function(w, i) {
+  return {
+    id: w.id || (w.source + '|' + i + '|' + w.word),
+    word: String(w.word || '').toUpperCase(),
+    meaning: String(w.meaning || ''),
+    ipa: String(w.ipa || ''),
+    source: String(w.source || 'Liste')
+  };
+}).filter(function(w) { return w.word && w.meaning; });
+
+var list = [];
+var mode = 'all';
+var idx = 0;
+var flipped = false;
+var testCurrent = null;
+
+var $ = function(id) { return document.getElementById(id); };
+var els = {
+  source:$('source'), level:$('level'), progress:$('progressTxt'), basket:$('basketTxt'), bar:$('bar'),
+  card:$('card'), front:$('front'), back:$('back'), word:$('word'), ipa:$('ipa'), meaning:$('meaning'),
+  src:$('srcTxt'), no:$('noTxt'), hint:$('hint'), toast:$('toast')
+};
+
+function loadState() {
+  try {
+    return JSON.parse(localStorage.getItem(LS_KEY)) || {done:{},basket:{},order:null};
+  } catch(e) {
+    return {done:{},basket:{},order:null};
+  }
+}
+function saveState() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state)); } catch(e) {}
+}
+function toast(msg) {
+  els.toast.textContent = msg;
+  els.toast.classList.add('show');
+  setTimeout(function() { els.toast.classList.remove('show'); }, 1400);
+}
+function uniqueSources() {
+  var seen = {}, arr = ['Tümü'];
+  words.forEach(function(w) { if(!seen[w.source]) { seen[w.source]=true; arr.push(w.source); } });
+  arr.push('Sepet');
+  return arr;
+}
+function setupSources() {
+  els.source.innerHTML = '';
+  uniqueSources().forEach(function(s) {
+    var o = document.createElement('option');
+    o.value = s; o.textContent = s;
+    els.source.appendChild(o);
+  });
+}
+function rebuildList() {
+  var selected = els.source.value || 'Tümü';
+  if(selected === 'Sepet') {
+    list = words.filter(function(w) { return !!state.basket[w.id]; });
+    mode = 'basket';
+  } else if(selected === 'Tümü') {
+    list = words.filter(function(w) { return !state.done[w.id]; });
+    mode = 'all';
+  } else {
+    list = words.filter(function(w) { return w.source === selected && !state.done[w.id]; });
+    mode = selected;
+  }
+  if(!list.length && selected !== 'Sepet') {
+    list = words.filter(function(w) { return selected === 'Tümü' || w.source === selected; });
+  }
+  idx = Math.min(idx, Math.max(0, list.length - 1));
+  flipped = false;
+  render();
+}
+function current() { return list[idx] || null; }
+function render() {
+  var w = current();
+  var total = list.length;
+  var doneCount = Object.keys(state.done).length;
+  var basketCount = Object.keys(state.basket).length;
+  els.basket.textContent = basketCount;
+  els.progress.textContent = total ? ((idx+1) + '/' + total) : '0/0';
+  els.bar.style.width = total ? Math.round((idx / total) * 100) + '%' : '0%';
+  els.level.textContent = mode === 'basket' ? 'Sepet' : 'Ana liste';
+  if(!w) {
+    els.word.textContent = 'Bitti';
+    els.ipa.textContent = '';
+    els.meaning.textContent = mode === 'basket' ? 'Sepet boş.' : 'Bu listede kelime kalmadı.';
+    els.src.textContent = 'Tamam';
+    els.no.textContent = '0/0';
+    showBack(true);
+    return;
+  }
+  els.word.textContent = w.word;
+  els.ipa.textContent = w.ipa || '';
+  els.meaning.textContent = w.meaning;
+  els.src.textContent = w.source;
+  els.no.textContent = (idx+1) + '/' + total;
+  showBack(flipped);
+}
+function showBack(show) {
+  flipped = !!show;
+  els.front.style.display = show ? 'none' : 'block';
+  els.back.style.display = show ? 'block' : 'none';
+  els.hint.textContent = show ? 'sağ: bildim · sol: sepete' : 'dokununca anlam görünür';
+}
+function nextCard() {
+  if(idx < list.length - 1) idx++;
+  else idx = 0;
+  flipped = false;
+  render();
+}
+function markGood() {
+  var w = current(); if(!w) return;
+  state.done[w.id] = Date.now();
+  delete state.basket[w.id];
+  saveState();
+  rebuildList();
+  toast('Bildim olarak işaretlendi');
+}
+function markBad() {
+  var w = current(); if(!w) return;
+  state.basket[w.id] = Date.now();
+  saveState();
+  nextCard();
+  render();
+  toast('Sepete eklendi');
+}
+function shuffle() {
+  for(var i=list.length-1;i>0;i--) {
+    var j = Math.floor(Math.random()*(i+1));
+    var t=list[i]; list[i]=list[j]; list[j]=t;
+  }
+  idx = 0; flipped = false; render(); toast('Karıştırıldı');
+}
+function normalize(s) {
+  return String(s || '').toLowerCase()
+    .replace(/ı/g,'i').replace(/İ/g,'i').replace(/ğ/g,'g').replace(/ü/g,'u')
+    .replace(/ş/g,'s').replace(/ö/g,'o').replace(/ç/g,'c')
+    .replace(/[^a-z0-9]+/g,'').trim();
+}
+function speak(text) {
+  try {
+    if(window.AndroidTTS && typeof window.AndroidTTS.speak === 'function') {
+      window.AndroidTTS.speak(text); return;
+    }
+  } catch(e) {}
+  try {
+    if('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      var u = new SpeechSynthesisUtterance(text);
+      u.lang = 'en-US'; u.rate = .88; u.pitch = 1;
+      window.speechSynthesis.speak(u);
+    }
+  } catch(e) {}
+}
+function openBox(id) { $(id).classList.add('show'); }
+function closeBox(id) { $(id).classList.remove('show'); }
+function search() {
+  var q = normalize($('q').value);
+  var res = $('results');
+  res.innerHTML = '';
+  var found = words.filter(function(w) {
+    return !q || normalize(w.word).indexOf(q) >= 0 || normalize(w.meaning).indexOf(q) >= 0 || normalize(w.ipa).indexOf(q) >= 0;
+  }).slice(0,80);
+  found.forEach(function(w) {
+    var d = document.createElement('div');
+    d.className = 'res';
+    d.innerHTML = '<b>' + escapeHtml(w.word) + '</b><br><small>' + escapeHtml(w.ipa) + ' · ' + escapeHtml(w.source) + '</small><div style="margin-top:6px;color:#fff3e4;font-weight:850">' + escapeHtml(w.meaning) + '</div>';
+    d.onclick = function() { speak(w.word); };
+    res.appendChild(d);
+  });
+  if(!found.length) res.innerHTML = '<div class="hint">Sonuç yok.</div>';
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, function(c) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; });
+}
+function startTest() {
+  testCurrent = words[Math.floor(Math.random()*words.length)];
+  $('testMeaning').textContent = testCurrent.meaning;
+  $('testInput').value = '';
+  $('testAnswer').textContent = '';
+  openBox('testBox');
+  setTimeout(function() { $('testInput').focus(); }, 150);
+}
+function checkTest(skip) {
+  if(!testCurrent) return;
+  var ans = normalize($('testInput').value);
+  var real = normalize(testCurrent.word);
+  if(skip) {
+    $('testAnswer').innerHTML = 'Cevap: <b>' + escapeHtml(testCurrent.word) + '</b>';
+    speak(testCurrent.word);
+    setTimeout(startTest, 900);
+    return;
+  }
+  if(ans === real) {
+    $('testAnswer').textContent = 'Doğru ✅';
+    speak(testCurrent.word);
+    setTimeout(startTest, 700);
+  } else {
+    $('testAnswer').innerHTML = 'Yanlış. Cevap: <b>' + escapeHtml(testCurrent.word) + '</b>';
+    speak(testCurrent.word);
+  }
+}
+function exportBasket() {
+  var arr = words.filter(function(w) { return state.basket[w.id]; });
+  var blob = new Blob([JSON.stringify(arr,null,2)], {type:'application/json'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'sepet.json';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 500);
+}
+
+setupSources();
+rebuildList();
+
+els.source.onchange = rebuildList;
+$('card').onclick = function(e) { if(e.target && e.target.tagName === 'BUTTON') return; showBack(!flipped); };
+$('flipBtn').onclick = function() { showBack(!flipped); };
+$('goodBtn').onclick = markGood;
+$('badBtn').onclick = markBad;
+$('shuffleBtn').onclick = shuffle;
+$('basketBtn').onclick = function() { els.source.value = 'Sepet'; rebuildList(); };
+$('speakBtn').onclick = function(e) { e.stopPropagation(); var w=current(); if(w) speak(w.word); };
+$('menuBtn').onclick = function() { openBox('menuBox'); };
+$('closeMenu').onclick = function() { closeBox('menuBox'); };
+$('searchBtn').onclick = function() { openBox('searchBox'); search(); };
+$('closeSearch').onclick = function() { closeBox('searchBox'); };
+$('q').oninput = search;
+$('testBtn').onclick = startTest;
+$('closeTest').onclick = function() { closeBox('testBox'); };
+$('testCheck').onclick = function() { checkTest(false); };
+$('testSkip').onclick = function() { checkTest(true); };
+$('testInput').addEventListener('keydown', function(e) { if(e.key === 'Enter') checkTest(false); });
+$('restartBtn').onclick = function() {
+  if(confirm('Bu listedeki ilerleme sıfırlansın mı?')) {
+    var selected = els.source.value;
+    words.forEach(function(w) { if(selected === 'Tümü' || selected === 'Sepet' || w.source === selected) delete state.done[w.id]; });
+    saveState(); rebuildList(); closeBox('menuBox'); toast('Liste başa alındı');
+  }
+};
+$('clearBtn').onclick = function() { state.basket = {}; saveState(); rebuildList(); toast('Sepet temizlendi'); };
+$('resetBtn').onclick = function() {
+  if(confirm('Tüm ilerleme silinsin mi?')) {
+    state = {done:{},basket:{},order:null};
+    saveState(); rebuildList(); closeBox('menuBox'); toast('Sıfırlandı');
+  }
+};
+$('exportBtn').onclick = exportBasket;
+
+document.addEventListener('keydown', function(e) {
+  if(e.key === 'ArrowRight') markGood();
+  if(e.key === 'ArrowLeft') markBad();
+  if(e.key === ' ') { e.preventDefault(); showBack(!flipped); }
+});
+
+})();
+</script>
+</body>
+</html>
