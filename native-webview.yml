@@ -1,4 +1,4 @@
-name: Native WebView TTS APK
+name: Native WebView APK
 
 on:
   workflow_dispatch:
@@ -22,46 +22,46 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Build native WebView APK with TTS
+      - name: Build native WebView APK
         run: |
           set -eux
           test -f index.html
           rm -rf native-apk
-          mkdir -p native-apk/app/src/main/java/com/mete/kelimekartlari/nativewebtts
+          mkdir -p native-apk/app/src/main/java/com/mete/kelimekartlari/nativeweb
           mkdir -p native-apk/app/src/main/assets
           cp index.html native-apk/app/src/main/assets/index.html
 
-          cat > native-apk/settings.gradle <<'EOF2'
+          cat > native-apk/settings.gradle <<'EOF'
           pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
           dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
-          rootProject.name = 'KelimeKartlariNativeTTS'
+          rootProject.name = 'KelimeKartlariNative'
           include ':app'
-          EOF2
+          EOF
 
-          cat > native-apk/build.gradle <<'EOF2'
+          cat > native-apk/build.gradle <<'EOF'
           plugins {
               id 'com.android.application' version '8.6.1' apply false
           }
-          EOF2
+          EOF
 
-          cat > native-apk/app/build.gradle <<'EOF2'
+          cat > native-apk/app/build.gradle <<'EOF'
           plugins { id 'com.android.application' }
 
           android {
-              namespace 'com.mete.kelimekartlari.nativewebtts'
+              namespace 'com.mete.kelimekartlari.nativeweb'
               compileSdk 35
 
               defaultConfig {
-                  applicationId 'com.mete.kelimekartlari.nativewebtts'
+                  applicationId 'com.mete.kelimekartlari.nativeweb'
                   minSdk 23
                   targetSdk 35
                   versionCode 1
-                  versionName '1.0-tts'
+                  versionName '1.0'
               }
           }
-          EOF2
+          EOF
 
-          cat > native-apk/app/src/main/AndroidManifest.xml <<'EOF2'
+          cat > native-apk/app/src/main/AndroidManifest.xml <<'EOF'
           <manifest xmlns:android="http://schemas.android.com/apk/res/android">
               <uses-permission android:name="android.permission.INTERNET" />
               <application
@@ -81,10 +81,10 @@ jobs:
                   </activity>
               </application>
           </manifest>
-          EOF2
+          EOF
 
           mkdir -p native-apk/app/src/main/res/values
-          cat > native-apk/app/src/main/res/values/styles.xml <<'EOF2'
+          cat > native-apk/app/src/main/res/values/styles.xml <<'EOF'
           <resources>
               <style name="AppTheme" parent="android:style/Theme.Material.NoActionBar">
                   <item name="android:windowNoTitle">true</item>
@@ -96,45 +96,25 @@ jobs:
                   <item name="android:statusBarColor">#111724</item>
               </style>
           </resources>
-          EOF2
+          EOF
 
-          cat > native-apk/app/src/main/java/com/mete/kelimekartlari/nativewebtts/MainActivity.java <<'EOF2'
-          package com.mete.kelimekartlari.nativewebtts;
+          cat > native-apk/app/src/main/java/com/mete/kelimekartlari/nativeweb/MainActivity.java <<'EOF'
+          package com.mete.kelimekartlari.nativeweb;
 
           import android.app.Activity;
-          import android.os.Build;
           import android.os.Bundle;
-          import android.speech.tts.TextToSpeech;
           import android.view.MotionEvent;
           import android.view.View;
-          import android.webkit.JavascriptInterface;
           import android.webkit.WebSettings;
           import android.webkit.WebView;
           import android.webkit.WebViewClient;
-          import java.util.Locale;
 
           public class MainActivity extends Activity {
               private WebView webView;
-              private TextToSpeech tts;
-              private boolean ttsReady = false;
-              private String pendingSpeak = null;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-
-                  tts = new TextToSpeech(this, status -> {
-                      if (status == TextToSpeech.SUCCESS) {
-                          int result = tts.setLanguage(Locale.US);
-                          ttsReady = result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED;
-                          tts.setSpeechRate(0.88f);
-                          tts.setPitch(1.0f);
-                          if (ttsReady && pendingSpeak != null) {
-                              speakNative(pendingSpeak);
-                              pendingSpeak = null;
-                          }
-                      }
-                  });
 
                   webView = new WebView(this);
                   webView.setFocusable(true);
@@ -149,7 +129,6 @@ jobs:
                   settings.setAllowContentAccess(true);
                   settings.setMediaPlaybackRequiresUserGesture(false);
 
-                  webView.addJavascriptInterface(new AndroidTTSBridge(), "AndroidTTS");
                   webView.setWebViewClient(new WebViewClient());
                   webView.setOnTouchListener(new View.OnTouchListener() {
                       @Override
@@ -163,48 +142,6 @@ jobs:
                   webView.loadUrl("file:///android_asset/index.html");
               }
 
-              private void speakNative(String text) {
-                  if (text == null) return;
-                  String clean = text.trim();
-                  if (clean.length() == 0 || tts == null) return;
-
-                  if (!ttsReady) {
-                      pendingSpeak = clean;
-                      return;
-                  }
-
-                  tts.stop();
-                  if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-                      tts.speak(clean, TextToSpeech.QUEUE_FLUSH, null, "kelime_" + System.currentTimeMillis());
-                  } else {
-                      tts.speak(clean, TextToSpeech.QUEUE_FLUSH, null);
-                  }
-              }
-
-              public class AndroidTTSBridge {
-                  @JavascriptInterface
-                  public void speak(String text) {
-                      runOnUiThread(() -> speakNative(text));
-                  }
-
-                  @JavascriptInterface
-                  public boolean isReady() {
-                      return ttsReady;
-                  }
-              }
-
-              @Override
-              protected void onDestroy() {
-                  if (tts != null) {
-                      tts.stop();
-                      tts.shutdown();
-                  }
-                  if (webView != null) {
-                      webView.destroy();
-                  }
-                  super.onDestroy();
-              }
-
               @Override
               public void onBackPressed() {
                   if (webView != null && webView.canGoBack()) {
@@ -214,7 +151,7 @@ jobs:
                   }
               }
           }
-          EOF2
+          EOF
 
           cd native-apk
           gradle assembleDebug --no-daemon
@@ -222,5 +159,5 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: kelime-kartlari-native-webview-tts-apk
+          name: kelime-kartlari-native-webview-apk
           path: native-apk/app/build/outputs/apk/debug/app-debug.apk
